@@ -1,0 +1,38 @@
+name: Bug report
+description: Something doesn't work or sounds wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time! The more details, the faster it gets fixed.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: VoxRack version
+      description: "⋯ → About VoxRack"
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 24H2"
+  - type: input
+    id: mic
+    attributes:
+      label: Microphone and recording app
+      placeholder: "Shure MV7 over USB, OBS 31"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: "C:\ProgramData\Golos\apo.log, C:\ProgramData\Golos\install.log, %AppData%\Golos\golos.log — the last lines are enough."
+      render: text

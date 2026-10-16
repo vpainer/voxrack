@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas (Discussions)
+    url: https://github.com/vpainer/voxrack/discussions
+    about: Ask how to get a certain sound, share presets and ideas.

@@ -1,0 +1,17 @@
+# сборка
+bin/
+obj/
+build/
+dist/
+out/
+*.exe
+*.dll
+*.pdb
+*.user
+.vs/
+
+# локальное
+apo/build.local.sh
+legacy/
+*.log
+apo/test/tmp/

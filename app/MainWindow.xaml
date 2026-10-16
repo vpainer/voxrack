@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Golos.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Golos"
+    xmlns:tk="using:CommunityToolkit.WinUI.Controls">
+
+  <Grid x:Name="Root">
+    <Grid.Resources>
+      <!-- пункты цепочки — как в NavigationView: иконка, имя; справа полоска подавления и светодиод вкл/выкл -->
+      <Style x:Key="ChainItemStyle" TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="Padding" Value="14,0,8,0"/>
+        <Setter Property="Margin" Value="4,1,4,1"/>
+      </Style>
+
+      <DataTemplate x:Key="StageTemplate" x:DataType="local:ChainItem">
+        <Grid ColumnSpacing="12" Background="Transparent" ToolTipService.ToolTip="{x:Bind Tip}">
+          <Grid.ContextFlyout>
+            <MenuFlyout>
+              <MenuFlyoutItem Text="{x:Bind local:Tx.Up}" KeyboardAcceleratorTextOverride="Alt+↑" Tag="{x:Bind Id}" Click="MoveUp_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE70E;"/></MenuFlyoutItem.Icon>
+              </MenuFlyoutItem>
+              <MenuFlyoutItem Text="{x:Bind local:Tx.Down}" KeyboardAcceleratorTextOverride="Alt+↓" Tag="{x:Bind Id}" Click="MoveDown_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE70D;"/></MenuFlyoutItem.Icon>
+              </MenuFlyoutItem>
+            </MenuFlyout>
+          </Grid.ContextFlyout>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="16"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <FontIcon Glyph="{x:Bind Glyph}" FontSize="16" VerticalAlignment="Center" Opacity="{x:Bind NameOpacity, Mode=OneWay}"/>
+          <TextBlock Grid.Column="1" Text="{x:Bind Name}" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" CharacterSpacing="40"
+                     TextTrimming="CharacterEllipsis" Opacity="{x:Bind NameOpacity, Mode=OneWay}" Visibility="{x:Bind NameVisibility, Mode=OneWay}"/>
+          <Grid Grid.Column="2" Width="26" Height="3" VerticalAlignment="Center" Visibility="{x:Bind GrVisibility, Mode=OneWay}" Background="{ThemeResource TrackBrush}" CornerRadius="1.5">
+            <Rectangle Width="{x:Bind GrW, Mode=OneWay}" HorizontalAlignment="Right" Fill="{ThemeResource AccentFillColorDefaultBrush}" RadiusX="1.5" RadiusY="1.5"/>
+          </Grid>
+          <ToggleButton Grid.Column="3" Style="{StaticResource LedToggleStyle}" IsChecked="{x:Bind IsOn, Mode=OneWay}" Tag="{x:Bind Id}" Click="Led_Click"
+                        ToolTipService.ToolTip="{x:Bind local:Tx.OnOff}" VerticalAlignment="Center" Margin="-4,0,-6,0" Visibility="{x:Bind LedVisibility, Mode=OneWay}"/>
+        </Grid>
+      </DataTemplate>
+
+      <DataTemplate x:Key="PinnedTemplate" x:DataType="local:ChainItem">
+        <Grid ColumnSpacing="12" Background="Transparent" ToolTipService.ToolTip="{x:Bind Tip}">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="16"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <FontIcon Glyph="{x:Bind Glyph}" FontSize="16" VerticalAlignment="Center" Opacity="{x:Bind NameOpacity, Mode=OneWay}"/>
+          <TextBlock Grid.Column="1" Text="{x:Bind Name}" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" CharacterSpacing="40"
+                     TextTrimming="CharacterEllipsis" Opacity="{x:Bind NameOpacity, Mode=OneWay}" Visibility="{x:Bind NameVisibility, Mode=OneWay}"/>
+          <Grid Grid.Column="2" Width="26" Height="3" VerticalAlignment="Center" Visibility="{x:Bind GrVisibility, Mode=OneWay}" Background="{ThemeResource TrackBrush}" CornerRadius="1.5">
+            <Rectangle Width="{x:Bind GrW, Mode=OneWay}" HorizontalAlignment="Right" Fill="{ThemeResource AccentFillColorDefaultBrush}" RadiusX="1.5" RadiusY="1.5"/>
+          </Grid>
+          <ToggleButton Grid.Column="3" Style="{StaticResource LedToggleStyle}" IsChecked="{x:Bind IsOn, Mode=OneWay}" Tag="{x:Bind Id}" Click="Led_Click"
+                        ToolTipService.ToolTip="{x:Bind local:Tx.OnOff}" VerticalAlignment="Center" Margin="-4,0,-6,0" Visibility="{x:Bind LedVisibility, Mode=OneWay}"/>
+        </Grid>
+      </DataTemplate>
+    </Grid.Resources>
+
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+
+    <TitleBar x:Name="AppTitleBar" Title="VoxRack" IsBackButtonVisible="False" IsPaneToggleButtonVisible="True" PaneToggleRequested="AppTitleBar_PaneToggleRequested">
+      <TitleBar.LeftHeader>
+        <PathIcon Foreground="{ThemeResource AccentFillColorDefaultBrush}" Margin="16,0,0,0" VerticalAlignment="Center"
+                  Data="M1,6 L3,6 L3,10 L1,10 Z M5,3 L7,3 L7,13 L5,13 Z M9,1 L11,1 L11,15 L9,15 Z M13,5 L15,5 L15,11 L13,11 Z"/>
+      </TitleBar.LeftHeader>
+      <TitleBar.Content>
+        <Grid ColumnSpacing="6" VerticalAlignment="Center" Margin="10,0,0,0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+          <ComboBox x:Name="MicBox" Width="164" Height="30" MinHeight="30" Padding="10,0,0,0" VerticalAlignment="Center"
+                    PlaceholderText="{x:Bind local:Tx.Mic}" SelectionChanged="MicBox_SelectionChanged" ToolTipService.ToolTip="{x:Bind local:Tx.MicTip}"/>
+          <ToggleButton x:Name="OwnBtn" Grid.Column="1" Content="SHARED" Style="{StaticResource BarToggleStyle}" FontSize="11" FontWeight="SemiBold" Width="70"
+                        Click="OwnBtn_Click"
+                        ToolTipService.ToolTip="{x:Bind local:Tx.OwnTip}"/>
+          <StackPanel x:Name="StatusPanel" Grid.Column="2" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center" Margin="6,0,0,0">
+            <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+            <TextBlock x:Name="StatusText" Text="…" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" MaxWidth="220"/>
+          </StackPanel>
+        </Grid>
+      </TitleBar.Content>
+      <TitleBar.RightHeader>
+        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,6,0" VerticalAlignment="Center">
+          <DropDownButton x:Name="PresetBtn" Height="30" MinWidth="120" MaxWidth="190" Padding="10,0,8,0" ToolTipService.ToolTip="{x:Bind local:Tx.PresetsTip}">
+            <TextBlock x:Name="PresetText" Text="—" TextTrimming="CharacterEllipsis" FontSize="12"/>
+            <DropDownButton.Flyout>
+              <Flyout x:Name="PresetFlyout" Placement="BottomEdgeAlignedRight" Opening="PresetFlyout_Opening">
+                <Flyout.FlyoutPresenterStyle>
+                  <Style TargetType="FlyoutPresenter" BasedOn="{StaticResource DefaultFlyoutPresenterStyle}">
+                    <Setter Property="Padding" Value="4,8,4,8"/>
+                    <Setter Property="MinWidth" Value="300"/>
+                  </Style>
+                </Flyout.FlyoutPresenterStyle>
+                <StackPanel Width="292" Spacing="2">
+                  <TextBlock Text="{x:Bind local:Tx.PresetsHead}" Style="{StaticResource RailHeadStyle}" Margin="12,0,0,4"/>
+                  <ListView x:Name="BuiltinList" SelectionMode="None" IsItemClickEnabled="True" ItemClick="BuiltinList_ItemClick"/>
+                  <TextBlock x:Name="MineHead" Text="{x:Bind local:Tx.MineHead}" Style="{StaticResource RailHeadStyle}" Margin="12,8,0,4"/>
+                  <ListView x:Name="MineList" SelectionMode="None" IsItemClickEnabled="True" ItemClick="MineList_ItemClick"/>
+                  <MenuFlyoutSeparator Margin="0,4"/>
+                  <Grid ColumnSpacing="6" Margin="8,2,8,0">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*"/>
+                      <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="SaveName" PlaceholderText="{x:Bind local:Tx.SaveAs}" KeyDown="SaveName_KeyDown"/>
+                    <Button Grid.Column="1" Content="{x:Bind local:Tx.Save}" Style="{StaticResource AccentButtonStyle}" Click="SavePreset_Click"/>
+                  </Grid>
+                </StackPanel>
+              </Flyout>
+            </DropDownButton.Flyout>
+          </DropDownButton>
+          <ToggleButton x:Name="MonBtn" Style="{StaticResource BarToggleStyle}" Click="MonBtn_Click"
+                        ToolTipService.ToolTip="{x:Bind local:Tx.MonTip}">
+            <FontIcon Glyph="&#xE7F6;" FontSize="14"/>
+          </ToggleButton>
+          <ToggleButton x:Name="PinBtn" Style="{StaticResource BarToggleStyle}" Click="PinBtn_Click" ToolTipService.ToolTip="{x:Bind local:Tx.PinTip}">
+            <FontIcon Glyph="&#xE718;" FontSize="14"/>
+          </ToggleButton>
+          <ToggleButton x:Name="PowerBtn" Style="{StaticResource BarToggleStyle}" Click="PowerBtn_Click"
+                        ToolTipService.ToolTip="{x:Bind local:Tx.PowerTip}">
+            <FontIcon Glyph="&#xE7E8;" FontSize="14"/>
+          </ToggleButton>
+          <Button x:Name="SupportBtn" Style="{StaticResource BarButtonStyle}" Click="Support_Click" ToolTipService.ToolTip="{x:Bind local:Tx.SupportTip}">
+            <FontIcon Glyph="&#xE006;" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+          </Button>
+          <Button x:Name="MoreBtn" Style="{StaticResource BarButtonStyle}" ToolTipService.ToolTip="{x:Bind local:Tx.More}">
+            <FontIcon Glyph="&#xE712;" FontSize="14"/>
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedRight">
+                <MenuFlyoutItem Text="{x:Bind local:Tx.AboutText}" Click="About_Click">
+                  <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE946;"/></MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="{x:Bind local:Tx.SupportTip}" Click="Support_Click">
+                  <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE006;"/></MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="{x:Bind local:Tx.CheckUpdates}" Click="CheckUpdates_Click">
+                  <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE895;"/></MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator/>
+                <MenuFlyoutItem Text="{x:Bind local:Tx.Reinstall}" Click="Reinstall_Click">
+                  <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE72C;"/></MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="{x:Bind local:Tx.Uninstall}" Click="Uninstall_Click">
+                  <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;"/></MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator/>
+                <MenuFlyoutSubItem x:Name="LangMenu" Text="{x:Bind local:Tx.Language}">
+                  <MenuFlyoutSubItem.Icon><FontIcon Glyph="&#xF2B7;"/></MenuFlyoutSubItem.Icon>
+                  <RadioMenuFlyoutItem x:Name="LangSystem" Text="{x:Bind local:Tx.LangSystem}" GroupName="lang" Tag="system" Click="Lang_Click"/>
+                  <RadioMenuFlyoutItem x:Name="LangEn" Text="English" GroupName="lang" Tag="en" Click="Lang_Click"/>
+                  <RadioMenuFlyoutItem x:Name="LangRu" Text="Русский" GroupName="lang" Tag="ru" Click="Lang_Click"/>
+                </MenuFlyoutSubItem>
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+        </StackPanel>
+      </TitleBar.RightHeader>
+    </TitleBar>
+
+    <Grid x:Name="Body" Grid.Row="1">
+      <SplitView x:Name="RailSplit" DisplayMode="CompactInline" IsPaneOpen="True" OpenPaneLength="208" CompactPaneLength="52"
+                 PaneBackground="Transparent">
+        <SplitView.Pane>
+          <!-- цепочка модулей -->
+          <Grid x:Name="RailContent" Padding="0,2,0,10" HorizontalAlignment="Left">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="*"/>
+              <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+              <StackPanel>
+                <ListView x:Name="TopList" SelectionMode="Single" ItemContainerStyle="{StaticResource ChainItemStyle}" ItemTemplate="{StaticResource PinnedTemplate}"
+                          SelectionChanged="Chain_SelectionChanged" ScrollViewer.VerticalScrollMode="Disabled"/>
+                <Rectangle Height="1" Margin="14,4,14,4" Fill="{ThemeResource DividerStrokeColorDefaultBrush}"/>
+                <ListView x:Name="StageList" SelectionMode="Single" ItemContainerStyle="{StaticResource ChainItemStyle}" ItemTemplate="{StaticResource StageTemplate}"
+                          CanReorderItems="True" CanDragItems="True" AllowDrop="True" DragItemsCompleted="StageList_DragItemsCompleted"
+                          SelectionChanged="Chain_SelectionChanged" ScrollViewer.VerticalScrollMode="Disabled"/>
+                <Rectangle Height="1" Margin="14,4,14,4" Fill="{ThemeResource DividerStrokeColorDefaultBrush}"/>
+                <ListView x:Name="BottomList" SelectionMode="Single" ItemContainerStyle="{StaticResource ChainItemStyle}" ItemTemplate="{StaticResource PinnedTemplate}"
+                          SelectionChanged="Chain_SelectionChanged" ScrollViewer.VerticalScrollMode="Disabled"/>
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- дубль: записать фразу и слушать её по кругу через текущие настройки -->
+            <StackPanel x:Name="TakePanel" Grid.Row="1" Spacing="6" Margin="10,8,8,0">
+              <Grid x:Name="TakeHead">
+                <TextBlock Text="TAKE" Style="{StaticResource RailHeadStyle}" Margin="8,0,0,0"/>
+                <TextBlock x:Name="TakeTime" HorizontalAlignment="Right" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+              </Grid>
+              <ProgressBar x:Name="TakeBar" Maximum="1" Value="0"/>
+              <StackPanel x:Name="TakeRow" Orientation="Horizontal" Spacing="4">
+                <ToggleButton x:Name="TakeRec" Width="32" Height="30" Padding="0" Click="TakeRec_Click" ToolTipService.ToolTip="{x:Bind local:Tx.TakeRecTip}">
+                  <Ellipse Width="10" Height="10" Fill="{StaticResource RecBrush}"/>
+                </ToggleButton>
+                <ToggleButton x:Name="TakePlay" Width="32" Height="30" Padding="0" Click="TakePlay_Click" IsEnabled="False" ToolTipService.ToolTip="{x:Bind local:Tx.TakePlayTip}">
+                  <FontIcon x:Name="TakePlayIcon" Glyph="&#xE768;" FontSize="12"/>
+                </ToggleButton>
+                <tk:Segmented x:Name="TakeAb" SelectedIndex="0" SelectionChanged="TakeAb_SelectionChanged" ToolTipService.ToolTip="{x:Bind local:Tx.WetDryTip}">
+                  <tk:SegmentedItem Content="WET" FontSize="11"/>
+                  <tk:SegmentedItem Content="DRY" FontSize="11"/>
+                </tk:Segmented>
+              </StackPanel>
+            </StackPanel>
+          </Grid>
+        </SplitView.Pane>
+
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="70"/>
+          </Grid.ColumnDefinitions>
+          <!-- выбранный модуль -->
+          <Grid Padding="6,0,4,10">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <StackPanel>
+            <InfoBar x:Name="UpdateBar" Severity="Success" IsClosable="True" IsOpen="False" Margin="0,0,0,8">
+              <InfoBar.ActionButton>
+                <Button Content="{x:Bind local:Tx.Download}" Click="UpdateBtn_Click"/>
+              </InfoBar.ActionButton>
+            </InfoBar>
+            <InfoBar x:Name="Banner" Severity="Warning" IsClosable="False" IsOpen="False" Margin="0,0,0,8">
+              <InfoBar.ActionButton>
+                <Button x:Name="BannerBtn" Click="BannerBtn_Click"/>
+              </InfoBar.ActionButton>
+            </InfoBar>
+            </StackPanel>
+            <Grid x:Name="Stage" Grid.Row="1"/>
+          </Grid>
+
+          <!-- индикаторы IN / OUT -->
+          <Grid x:Name="MetersHost" Grid.Column="1" Margin="0,0,6,10" ToolTipService.ToolTip="{x:Bind local:Tx.MetersTip}"/>
+        </Grid>
+      </SplitView>
+
+      <!-- подключение к микрофону -->
+      <Grid x:Name="Setup" Visibility="Collapsed" Background="{ThemeResource SmokeFillColorDefaultBrush}">
+        <Border MaxWidth="460" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24,20,24,20" CornerRadius="8"
+                Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1">
+          <StackPanel Spacing="12">
+            <TextBlock Text="{x:Bind local:Tx.SetupTitle}" Style="{StaticResource SubtitleTextBlockStyle}"/>
+            <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="{x:Bind local:Tx.SetupText}"/>
+            <StackPanel Spacing="4">
+              <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind local:Tx.Setup1}"/>
+              <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind local:Tx.Setup2}"/>
+              <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind local:Tx.Setup3}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,6,0,0">
+              <Button x:Name="SetupBtn" Content="{x:Bind local:Tx.Connect}" Style="{StaticResource AccentButtonStyle}" Click="SetupBtn_Click"/>
+              <ProgressRing x:Name="SetupRing" Width="18" Height="18" IsActive="False" Visibility="Collapsed"/>
+              <TextBlock x:Name="SetupMsg" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="260" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <InfoBar x:Name="ToastBar" Severity="Informational" IsClosable="False" IsOpen="False" IsIconVisible="False"
+               HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,18" MaxWidth="560"/>
+    </Grid>
+  </Grid>
+</Window>

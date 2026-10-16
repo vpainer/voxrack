@@ -1,0 +1,66 @@
+# Сборка на каждый пуш и пулл-реквест; тег vX.Y.Z — ещё и релиз с готовым архивом.
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = '1.0.0'
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          install: mingw-w64-ucrt-x86_64-gcc
+
+      - name: Build the effect and run its tests
+        shell: msys2 {0}
+        run: sh apo/build.sh test
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Publish the app (self-contained)
+        shell: pwsh
+        run: >
+          dotnet publish app -c Release -r win-x64 --self-contained true
+          -p:Version=${{ steps.ver.outputs.version }}
+          -p:PublishDir=${{ github.workspace }}\out\VoxRack\
+
+      - name: Package
+        shell: pwsh
+        run: |
+          Copy-Item LICENSE, README.md out\VoxRack\
+          Compress-Archive -Path out\VoxRack\* -DestinationPath "out\VoxRack-${{ steps.ver.outputs.version }}-win-x64.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VoxRack-${{ steps.ver.outputs.version }}-win-x64
+          path: out\VoxRack\
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: VoxRack ${{ steps.ver.outputs.version }}
+          body_path: docs/release-notes/v${{ steps.ver.outputs.version }}.md
+          files: out/VoxRack-${{ steps.ver.outputs.version }}-win-x64.zip
